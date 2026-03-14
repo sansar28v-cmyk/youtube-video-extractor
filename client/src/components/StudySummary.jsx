@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Loader2, Sparkles, Clock } from 'lucide-react';
+import { api } from '../api';
 
 export default function StudySummary({ sessionId, title, screenshots }) {
     const [summary, setSummary] = useState(null);
@@ -16,17 +17,14 @@ export default function StudySummary({ sessionId, title, screenshots }) {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/summarize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId }),
-            });
-            const text = await res.text();
-            const data = text ? JSON.parse(text) : {};
-            if (!res.ok) throw new Error(data.error || 'Failed to load summary');
+            const data = await api.post('/api/summarize', { sessionId });
             setSummary(data);
         } catch (err) {
             setError(err?.message || 'Could not load summary');
+        } finally {
+            setLoading(false);
+        }
+    };
         } finally {
             setLoading(false);
         }

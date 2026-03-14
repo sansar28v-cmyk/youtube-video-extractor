@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, FileText, Trash2, Archive, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '../api';
 
 export default function DownloadOptions({ sessionId, title, count }) {
     const [deleting, setDeleting] = useState(false);
@@ -9,7 +10,7 @@ export default function DownloadOptions({ sessionId, title, count }) {
 
     const downloadZip = () => {
         const link = document.createElement('a');
-        link.href = `/api/download/zip/${sessionId}`;
+        link.href = `${import.meta.env.VITE_API_BASE_URL || ''}/api/download/zip/${sessionId}`;
         link.download = `${title || 'screenshots'}.zip`;
         link.click();
         toast.success('Downloading ZIP…');
@@ -17,7 +18,7 @@ export default function DownloadOptions({ sessionId, title, count }) {
 
     const downloadPdf = () => {
         const link = document.createElement('a');
-        link.href = `/api/download/pdf/${sessionId}`;
+        link.href = `${import.meta.env.VITE_API_BASE_URL || ''}/api/download/pdf/${sessionId}`;
         link.download = `${title || 'screenshots'}.pdf`;
         link.click();
         toast.success('Generating PDF…');
@@ -27,15 +28,11 @@ export default function DownloadOptions({ sessionId, title, count }) {
         if (!confirm('Delete all screenshots for this session?')) return;
         setDeleting(true);
         try {
-            const res = await fetch(`/api/session/${sessionId}`, { method: 'DELETE' });
-            if (res.ok) {
-                setDeleted(true);
-                toast.success('Session deleted.');
-            } else {
-                toast.error('Failed to delete session.');
-            }
+            await api.delete(`/api/session/${sessionId}`);
+            setDeleted(true);
+            toast.success('Session deleted.');
         } catch {
-            toast.error('Error deleting session.');
+            toast.error('Failed to delete session.');
         } finally {
             setDeleting(false);
         }

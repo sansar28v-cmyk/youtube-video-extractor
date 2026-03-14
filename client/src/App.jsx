@@ -9,6 +9,7 @@ import ExtractionProgress from './components/ExtractionProgress';
 import Gallery from './components/Gallery';
 import DownloadOptions from './components/DownloadOptions';
 import StudySummary from './components/StudySummary';
+import { api } from './api';
 
 const fadeUp = {
     hidden: { opacity: 0, y: 30 },
@@ -38,16 +39,16 @@ export default function App() {
 
     useEffect(() => {
         let cancelled = false;
-        fetch('/health')
-            .then((r) => r.text())
-            .then((text) => {
+        api.get('/health')
+            .then((d) => {
                 if (cancelled) return;
-                try {
-                    const d = text ? JSON.parse(text) : {};
-                    setBackendOk(d?.status === 'ok');
-                } catch {
-                    setBackendOk(false);
-                }
+                setBackendOk(d?.status === 'ok');
+            })
+            .catch(() => {
+                if (!cancelled) setBackendOk(false);
+            });
+        return () => { cancelled = true; };
+    }, []);
             })
             .catch(() => { if (!cancelled) setBackendOk(false); });
         return () => { cancelled = true; };
@@ -67,23 +68,7 @@ export default function App() {
         setScreenshots([]);
         setSessionId(null);
         try {
-            const res = await fetch(`/api/video-info?url=${encodeURIComponent(ytUrl)}`);
-            let text;
-            try {
-                text = await res.text();
-            } catch (e) {
-                throw new Error(backendUnavailableMsg);
-            }
-            if (!text || !text.trim()) {
-                throw new Error(backendUnavailableMsg);
-            }
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch {
-                throw new Error(backendUnavailableMsg);
-            }
-            if (!res.ok) throw new Error(data.error || 'Failed to fetch video info');
+            const data = await api.get(`/api/video-info?url=${encodeURIComponent(ytUrl)}`);
             setVideoInfo(data);
             setVideoId(extractVideoId(ytUrl));
             setAppState('ready');
@@ -107,7 +92,7 @@ export default function App() {
         setStatusMessage('Connecting to AI Engine…');
 
         try {
-            const res = await fetch('/api/extract', {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/extract`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url, interval: settings.interval, mode: settings.mode }),
