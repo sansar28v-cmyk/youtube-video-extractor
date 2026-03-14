@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "YouTube Video Screenshot Extractor",
   "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "start": "cd server && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",

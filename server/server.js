@@ -19,6 +19,9 @@ if (!fs.existsSync(screenshotsDir)) {
 }
 app.use('/screenshots', express.static(screenshotsDir));
 
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // Routes
 app.use('/api', require('./routes/videoInfo'));
 app.use('/api', require('./routes/extract'));
@@ -27,6 +30,11 @@ app.use('/api', require('./routes/summarize'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
+// Catch all handler: send back React's index.html file for any non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
